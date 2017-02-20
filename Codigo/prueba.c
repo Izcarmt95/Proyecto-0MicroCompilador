@@ -62,6 +62,7 @@ void Chequear(char * s);
 void Comenzar(void);
 void Terminar(void);
 void Asignar(REG_EXPRESION izq, REG_EXPRESION der);
+void GenerarMov(char * co, char * a, char * b);
 /************************Programa Principal************************/
 int main(int argc, char * argv[])
 {
@@ -288,20 +289,29 @@ REG_EXPRESION GenInfijo(REG_EXPRESION e1, char * op, REG_EXPRESION e2)
 /* Genera la instruccion para una operacion infija y construye un registro
 semantico con el resultado */
 REG_EXPRESION reg;
+if(e1.clase == CONSTANTE && e2.clase == CONSTANTE){
+		
+		reg.clase = CONSTANTE;
+		printf("%s#%s\n",Extraer(&e1),Extraer(&e2) );
+		reg.valor = (op[0] == '+')? e1.valor + e2.valor : e1.valor - e2.valor;
+}
+else{
+
 static unsigned int numTemp = 1;
 char cadTemp[TAMLEX] ="Temp&";
 char cadNum[TAMLEX];
 char cadOp[TAMLEX];
-if ( op[0] == '-' ) strcpy(cadOp, "Restar");
-if ( op[0] == '+' ) strcpy(cadOp, "Sumar");
+if ( op[0] == '-' ) strcpy(cadOp, "subs");
+if ( op[0] == '+' ) strcpy(cadOp, "add");
 sprintf(cadNum, "%d", numTemp);
 numTemp++;
 strcat(cadTemp, cadNum);
 if ( e1.clase == ID) Chequear(Extraer(&e1));
 if ( e2.clase == ID) Chequear(Extraer(&e2));
 Chequear(cadTemp);
-Generar(cadOp, Extraer(&e1), Extraer(&e2), cadTemp);
-strcpy(reg.nombre, cadTemp);
+Generar(cadOp,Extraer(&e1), Extraer(&e1), Extraer(&e2));
+strcpy(reg.nombre, Extraer(&e1));
+}
 return reg;
 }
 /************Funciones Auxiliares**********************************/
@@ -332,10 +342,22 @@ void ErrorSintactico()
 {
 printf("Error Sintactico\n");
 }
+
 void Generar(char * co, char * a, char * b, char * c)
 {
 /* Produce la salida de la instruccion para la MV por stdout */
-printf("%s %s%c%s%c%s\n", co, a, ',', b, ',', c);
+	printf("%s %s%c%s%c%s\n", co, a, ',', b, ',', c);
+}
+
+void GenerarMov(char * co, char * a, char * b)
+{
+/* Produce la salida de la instruccion para la MV por stdout */
+	printf("%s %s%c#%s\n", co, a, ',', b);
+}
+void GenerarMovReg(char * co, char * a, char * b)
+{
+/* Produce la salida de la instruccion para la MV por stdout */
+	printf("%s %s%c%s\n", co, a, ',', b);
 }
 char * Extraer(REG_EXPRESION * preg)
 {
@@ -392,13 +414,21 @@ Generar("Detiene", "", "", "");
 void Asignar(REG_EXPRESION izq, REG_EXPRESION der)
 {
 /* Genera la instruccion para la asignacion */
-Generar("Almacena", Extraer(&der), izq.nombre, "");
+if (der.clase == ID){
+	printf("%d\n",der.valor );
+GenerarMov("Mov",izq.nombre, Extraer(&der));	
+}
+else{
+	GenerarMovReg("Mov",izq.nombre, Extraer(&der));
+}
+
+
 }
 /*********************Scanner************************************/
 TOKEN scanner()
 {
-int tabla[NUMESTADOS][NUMCOLS] = { { 1, 3, 5, 6, 7, 8, 9, 10, 11, 14, 13, 0,
-14 },
+int tabla[NUMESTADOS][NUMCOLS] = { 
+ { 1, 3, 5, 6, 7, 8, 9, 10, 11, 14, 13, 0,14 },
  { 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
  { 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14 },
  { 4, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 },
